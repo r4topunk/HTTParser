@@ -48,32 +48,34 @@ class HttpRequest:
     def set_http_version(self, http_version):
         self.http_version = http_version
 
-    def set_parsed_url(self, parsed_url):
-        self.parsed_url = parsed_url
-
     def set_raw_request(self, raw_request):
+        # Removes any adicional line break
+        raw_request = raw_request.strip()
+
+        # Separates the request body
         request = raw_request.split("\n\n", 1)
         req_top = request[0].splitlines()
 
         try:
             req_body = request[1]
         except IndexError:
+            # The request was pasted without body
             req_body = "" 
 
         self.set_body(req_body)
         self.set_headers(req_top[1:])
 
+        # First line be like: POST /something?foo=bar HTTP/2.0
         req_first_line = req_top[0].split(" ")
         self.set_verb(req_first_line[0])
         self.set_http_version(req_first_line[2].split("/")[1])
 
-        req_path_params = req_first_line[1]
-        url = f"https://{self.get_header('Host')}{req_path_params}")
-        self.set_parsed_url(urlparse(url))
-        self.set_url(self.get_parsed_url().geturl())
-
-        self.set_path(self.get_parsed_url().path)
-        self.set_parameters(parse_qs(self.get_parsed_url().query))
+        req_path_and_params = req_first_line[1]
+        url = f"https://{self.get_header('Host')}{req_path_and_params}")
+        parsed_url = urlparse(url)
+        self.set_url(parsed_url.geturl())
+        self.set_path(parsed_url.path)
+        self.set_parameters(parse_qs(parsed_url.query))
 
 
     """ Getters """
@@ -98,7 +100,7 @@ class HttpRequest:
     def get_parameters(self):
         return self.parameters
 
-    def getParameter(self, param_name):
+    def getarameter(self, param_name):
         return self.parameters[param_name]
 
     def get_path(self):
@@ -109,9 +111,6 @@ class HttpRequest:
 
     def get_http_version(self):
         return self.http_version
-
-    def get_parsed_url(self):
-        return self.parsed_url
 
     def get_request(self, unquote = False):
         request = f"{self.get_verb()} "
@@ -160,3 +159,13 @@ class HttpRequest:
     def add_parameter(self, key, value):
         self.parameters[key] = value
 
+    
+    """ Deleters """
+    def del_cookie(self, name, value):
+        del self.cookies[name]
+
+    def del_header(self, name, value):
+        del self.header[name]
+
+    def del_parameter(self, key, value):
+        del self.parameters[name]
