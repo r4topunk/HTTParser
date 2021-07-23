@@ -71,7 +71,7 @@ class HttpRequest:
         self.set_http_version(req_first_line[2].split("/")[1])
 
         req_path_and_params = req_first_line[1]
-        url = f"https://{self.get_header('Host')}{req_path_and_params}")
+        url = f"https://{self.get_header('Host')}{req_path_and_params}"
         parsed_url = urlparse(url)
         self.set_url(parsed_url.geturl())
         self.set_path(parsed_url.path)
