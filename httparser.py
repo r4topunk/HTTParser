@@ -3,7 +3,7 @@ from urllib.parse import urlparse, parse_qs, unquote
 
 class HttpRequest:
     """ Creat an object from an HTTP request """
-    def __init__(self, raw_request = None):
+    def __init__(self, raw_request=None):
         self.headers = {}
         self.parameters = {}
         self.cookies = {}
@@ -11,8 +11,7 @@ class HttpRequest:
         if raw_request:
             self.set_raw_request(raw_request)
 
-
-    """ Setters """
+    # SETTERS
     def set_headers(self, req_top):
         for header_line in req_top:
             header_key, header_value = header_line.split(": ", 1)
@@ -32,11 +31,14 @@ class HttpRequest:
 
     def set_param_value(self, key, value):
         self.parameters[key] = value
-                
+
     def set_url(self, url):
         self.url = url
 
-    def set_body(self, body = None):
+    def set_query_string_url(self):
+        self.query_string_url = self.url + f"?{self.get_query_string()}"
+
+    def set_body(self, body=None):
         self.body = body
 
     def set_path(self, path):
@@ -51,16 +53,19 @@ class HttpRequest:
     def set_raw_request(self, raw_request):
         # Removes any adicional line break
         raw_request = raw_request.strip()
+        http_verbs = ["GET", "POST", "PUT", "DELETE", "TRACE"]
+        if raw_request.split(" ", 1)[0] not in http_verbs:
+            exit("Invalid request")
 
         # Separates the request body
         request = raw_request.split("\n\n", 1)
-        req_top = request[0].splitlines()
+        req_top = [lines.strip() for lines in request[0].splitlines()]
 
         try:
             req_body = request[1]
         except IndexError:
             # The request was pasted without body
-            req_body = "" 
+            req_body = ""
 
         self.set_body(req_body)
         self.set_headers(req_top[1:])
@@ -71,19 +76,19 @@ class HttpRequest:
         self.set_http_version(req_first_line[2].split("/")[1])
 
         req_path_and_params = req_first_line[1]
-        url = f"https://{self.get_header('Host')}{req_path_and_params}")
+        url = f"https://{self.get_header('Host')}{req_path_and_params}"
         parsed_url = urlparse(url)
         self.set_url(parsed_url.geturl())
         self.set_path(parsed_url.path)
         self.set_parameters(parse_qs(parsed_url.query))
+        self.set_query_string_url()
 
+    # GETTERS
+    def get_url(self):
+        return self.url
 
-    """ Getters """
-    def get_url(self, with_query_string = True):
-        url = self.url
-        if with_query_string == True:
-            url += f"?{self.get_query_string()}"
-        return url
+    def get_query_string_url(self):
+        return self.query_string_url
 
     def get_body(self):
         return self.body
@@ -100,7 +105,7 @@ class HttpRequest:
     def get_parameters(self):
         return self.parameters
 
-    def getarameter(self, param_name):
+    def get_parameter(self, param_name):
         return self.parameters[param_name]
 
     def get_path(self):
@@ -112,7 +117,7 @@ class HttpRequest:
     def get_http_version(self):
         return self.http_version
 
-    def get_request(self, unquote = False):
+    def get_request(self, unquote=False):
         request = f"{self.get_verb()} "
         request += f"{self.get_path()}"
         request += f"{self.get_query_string()} "
@@ -131,7 +136,7 @@ class HttpRequest:
 
         request += "\n\n"
 
-        if unquote == True:
+        if unquote is True:
             request += unquote(self.get_body())
         else:
             request += self.get_body()
@@ -148,8 +153,7 @@ class HttpRequest:
         else:
             return ""
 
-
-    """ Adders """
+    # ADDERS
     def add_cookie(self, name, value):
         self.cookies[name] = value
 
@@ -159,13 +163,12 @@ class HttpRequest:
     def add_parameter(self, key, value):
         self.parameters[key] = value
 
-    
-    """ Deleters """
-    def del_cookie(self, name, value):
+    # DELETERS
+    def del_cookie(self, name):
         del self.cookies[name]
 
-    def del_header(self, name, value):
-        del self.header[name]
+    def del_header(self, name):
+        del self.headers[name]
 
-    def del_parameter(self, key, value):
+    def del_parameter(self, name):
         del self.parameters[name]
